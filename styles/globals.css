@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 257, 100%, 64%;
     --foreground: 222.2 47.4% 11.2%;
 
     --muted: 210 40% 96.1%;
@@ -33,10 +33,10 @@
 
     --ring: 215 20.2% 65.1%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
   }
 
-  .dark {
+  /* .dark {
     --background: 224 71% 4%;
     --foreground: 213 31% 91%;
 
@@ -67,7 +67,7 @@
     --ring: 216 34% 17%;
 
     --radius: 0.5rem;
-  }
+  } */
 }
 
 @layer base {
