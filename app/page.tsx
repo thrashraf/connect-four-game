@@ -22,15 +22,19 @@ export default function IndexPage() {
             className="m-auto mt-10"
           />
           <div className="mt-20 flex flex-col space-y-5">
-            <Button className="flex justify-between text-2xl font-bold shadow-custom">
-              PLAY VS PLAYER
-              <Image
-                src={"/images/player-vs-player.svg"}
-                alt="arrow"
-                width={60}
-                height={60}
-                className="ml-2"
-              />
+            <Button
+              className="flex justify-between text-2xl font-bold shadow-custom"
+            >
+              <Link href="/room" className="flex w-full justify-between">
+                MULTIPLAYER
+                <Image
+                  src={"/images/player-vs-player.svg"}
+                  alt="arrow"
+                  width={60}
+                  height={60}
+                  className="ml-2"
+                />
+              </Link>
             </Button>
             <Button
               variant={"secondary"}
