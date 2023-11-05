@@ -12,7 +12,7 @@ const TurnsCard = (props: Props) => {
       <>
         <Image
           alt={`player ${props.playerTurn}`}
-          src={`/images/turn-background-${props.playerTurn === 1 ? 'yellow' : 'red'}.svg`}
+          src={`/images/turn-background-${props.playerTurn === 1 ? 'red' : 'yellow'}.svg`}
           width={200}
           height={200}
         />
