@@ -4,6 +4,7 @@ import Image from 'next/image'
 
 type Props = {
   playerTurn: 1 | 2;
+  time: number;
 }
 
 const TurnsCard = (props: Props) => {
@@ -18,7 +19,7 @@ const TurnsCard = (props: Props) => {
         />
         <div className='absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2'>
           <h1 className='font-bold'>PLAYER {props.playerTurn}</h1>
-          <h1 className='mx-7 text-[2rem] font-bold'>{0}</h1>
+          <h1 className='mx-7 text-[2rem] font-bold'>{props?.time}</h1>
         </div>
       </>
     </div>
