@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client'
 
-import React, { useEffect } from "react"
+import React, { useCallback, useEffect } from "react"
 import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
@@ -65,6 +65,76 @@ const Page = (props: Props) => {
     //? update the player turn
     return setPlayerTurn(playerTurn === 1 ? 2 : 1);
   }
+
+  const checkForWin = useCallback(() => {
+    //? check for vertical win
+    for (let i = 0; i < boardState.length; i++) {
+      for (let j = 0; j < boardState[i].length; j++) {
+        if (
+          boardState[i][j]?.player !== 0 &&
+          boardState[i][j]?.player === boardState?.[i]?.[j + 1]?.player &&
+          boardState[i][j]?.player === boardState?.[i]?.[j + 2]?.player &&
+          boardState[i][j]?.player === boardState?.[i]?.[j + 3]?.player
+        ) {
+          return boardState[i][j]?.player;
+        }
+      }
+    }
+
+    //? check for horizontal win
+    for (let i = 0; i < boardState.length; i++) {
+      for (let j = 0; j < boardState[i].length; j++) {
+        if (
+          boardState[i][j]?.player !== 0 &&
+          boardState[i][j]?.player === boardState?.[i + 1]?.[j]?.player &&
+          boardState[i][j]?.player === boardState?.[i + 2]?.[j]?.player &&
+          boardState[i][j]?.player === boardState?.[i + 3]?.[j]?.player
+        ) {
+          return boardState[i][j]?.player;
+        }
+      }
+    }
+
+    //? check for diagonal win (top left to bottom right)
+    for (let i = 0; i < boardState.length; i++) {
+      for (let j = 0; j < boardState[i].length; j++) {
+        if (
+          boardState[i][j]?.player !== 0 &&
+          boardState[i][j]?.player === boardState?.[i + 1]?.[j + 1]?.player &&
+          boardState[i][j]?.player === boardState?.[i + 2]?.[j + 2]?.player &&
+          boardState[i][j]?.player === boardState?.[i + 3]?.[j + 3]?.player
+        ) {
+          return boardState[i][j]?.player;
+        }
+      }
+    }
+
+    //? check for diagonal win (bottom left to top right)
+    for (let i = 0; i < boardState.length; i++) {
+      for (let j = 0; j < boardState[i].length; j++) {
+        if (
+          boardState[i][j]?.player !== 0 &&
+          boardState[i][j]?.player === boardState?.[i - 1]?.[j + 1]?.player &&
+          boardState[i][j]?.player === boardState?.[i - 2]?.[j + 2]?.player &&
+          boardState[i][j]?.player === boardState?.[i - 3]?.[j + 3]?.player
+        ) {
+          return boardState[i][j]?.player;
+        }
+      }
+    }
+
+    return null;
+  }, [boardState])
+
+  useEffect(() => {
+    const winner = checkForWin();
+    if (winner) {
+      setTimeout(() => {
+        alert(`Player ${winner} wins!`);
+      }, 1000);
+    }
+  }
+    , [checkForWin])
 
 
 
