@@ -10,46 +10,62 @@ import TurnsCard from "@/components/turns-card"
 
 type Props = {}
 
+type Cell = {
+  player: 0 | 1 | 2;
+  falling: boolean;
+};
+
 const Page = (props: Props) => {
 
   const [hoveredColumn, setHoveredColumn] = React.useState<number | null>(null);
-  const [boardState, setBoardState] = React.useState<number[][]>([]);
+  const [boardState, setBoardState] = React.useState<Cell[][]>([]);
   const [playerTurn, setPlayerTurn] = React.useState<1 | 2>(1);
 
   // ==================================== FUNCTIONS ====================================
 
   useEffect(() => {
-    //? set the board state
-    const board = Array.from(Array(7), () => new Array(6).fill(0));
+    // Initialize the board state with empty cells
+    const board: Cell[][] = Array.from(Array(7), () =>
+      new Array(6).fill({ player: 0, falling: false })
+    );
     setBoardState(board);
-  }, [])
+  }, []);
+
 
   const handleColumnHover = (columnIndex: number) => {
     setHoveredColumn(columnIndex);
   }
 
   const handleColumnClick = (row: number, column: number) => {
+    //... existing code
     //? check if the column is full
-    if (boardState[column][0] !== 0) return;
+    if (boardState[column][0]?.player !== 0) return;
 
     //? find the last empty row
     let emptyRow = 0;
 
     for (let i = 0; i < boardState[column].length; i++) {
-      if (boardState[column][i] === 0) {
+      if (boardState[column][i]?.player === 0) {
         emptyRow = i;
       }
     }
 
     //? update the board state
     const newBoardState = [...boardState];
-    newBoardState[column][emptyRow] = playerTurn;
+    newBoardState[column][emptyRow] = { player: playerTurn, falling: true };
 
     setBoardState(newBoardState);
+
+    // Remove the falling class after the animation is done
+    setTimeout(() => {
+      newBoardState[column][emptyRow] = { player: playerTurn, falling: false };
+      setBoardState(newBoardState);
+    }, 500);
 
     //? update the player turn
     return setPlayerTurn(playerTurn === 1 ? 2 : 1);
   }
+
 
 
   return (
@@ -102,14 +118,14 @@ const Page = (props: Props) => {
                 {col.map((row, rowIndex) => (
                   <div
                     key={rowIndex}
-                    className={`relative z-10 mt-1 h-12 w-12 border-none ${rowIndex === 0 && 'xl:mt-3'} ${columnIndex === 5 || columnIndex === 6 ? 'md:mx-1 xl:mx-2' : 'md:mx-2'} md:mt-0 md:h-[65px] md:w-[65px] xl:h-[95px] xl:w-[95px]`}
+                    className={`relative z-10 mt-1 h-12 w-12 border-none ${rowIndex === 0 && 'xl:mt-3'} ${columnIndex === 5 || columnIndex === 6 ? 'md:mx-1 xl:mx-2' : 'md:mx-2'} bg-transparent md:mt-0 md:h-[65px] md:w-[65px] xl:h-[95px] xl:w-[95px]`}
                     onClick={() => handleColumnClick(rowIndex, columnIndex)}
                   >
-                    {row !== 0 ? (
+                    {row?.player !== 0 ? (
                       <img
-                        src={`/images/counter-${row !== 1 ? 'yellow' : 'red'}-small.svg`}
+                        src={`/images/counter-${row?.player !== 1 ? 'yellow' : 'red'}-small.svg`}
                         alt="counter"
-                        className={`absolute left-1/2 top-1/2 z-10 h-12 w-12 -translate-x-1/2 -translate-y-1/2 border-none md:h-[70px] md:w-[70px] xl:h-[100px] xl:w-[100px]`}
+                        className={`absolute left-1/2 top-1/2 z-10 h-12 w-12 -translate-x-1/2 -translate-y-1/2 border-none md:h-[70px] md:w-[70px] xl:h-[100px] xl:w-[100px] ${row.falling ? 'falling' : ''}`}
                       />
                     ) : null}
                   </div>

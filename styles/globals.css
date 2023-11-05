@@ -79,3 +79,23 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+@keyframes fall {
+  0% {
+    transform: translateY(-500px);
+    opacity: 0;
+    position: absolute;
+    left: 0px;
+  }
+
+  100% {
+    transform: translateY(-30%);
+    opacity: 1;
+    position: absolute;
+    left: 0px;
+  }
+}
+
+.falling {
+  animation: fall 0.5s ease-in-out ;
+}
