@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import PlayerCard from "@/components/player-card"
 import TurnsCard from "@/components/turns-card"
 import { type } from "os"
+import Menu from "@/components/menu"
+import WinningCard from "@/components/winning-card"
 
 type Props = {}
 
@@ -31,16 +33,26 @@ const Page = (props: Props) => {
     player1: 0,
     player2: 0,
   });
+
+  const [onStart, setOnStart] = React.useState<boolean>(false);
+
+  const [playerWin, setPlayerWin] = React.useState<1 | 2 | null>(null);
   const [winningPattern, setWinningPattern] = React.useState<number[][]>([]);
+
+  const [isOpen, setIsOpen] = React.useState<boolean>(false);
 
   // ==================================== FUNCTIONS ====================================
 
-  useEffect(() => {
-    // Initialize the board state with empty cells
+  const initializeGame = () => {
     const board: Cell[][] = Array.from(Array(7), () =>
       new Array(6).fill({ player: 0, falling: false })
     )
     setBoardState(board);
+  }
+
+  useEffect(() => {
+    // Initialize the board state with empty cells
+    initializeGame()
   }, []);
 
   React.useEffect(() => {
@@ -62,7 +74,7 @@ const Page = (props: Props) => {
   const handleColumnClick = (row: number, column: number) => {
     //... existing code
     //? check if the column is full
-    if (boardState[column][0]?.player !== 0) return
+    if (boardState[column][0]?.player !== 0 || playerWin) return
 
     //? find the last empty row
     let emptyRow = 0
@@ -189,28 +201,49 @@ const Page = (props: Props) => {
   }, [boardState])
 
   useEffect(() => {
+    if (playerWin) return;
+
     const winner = checkForWin()
     if (winner) {
       setTimeout(() => {
-        alert(`Player ${winner} wins!`)
+        setPlayerWin(winner);
+        winner === 1 ? setScore({ ...score, player2: score.player2 + 1 }) : setScore({ ...score, player1: score.player1 + 1 })
       }, 1000)
     }
-  }, [checkForWin]);
+  }, [checkForWin, playerWin, score]);
 
   const restart = () => {
-    setBoardState([])
-    setTime(45)
-    setPlayerTurn(1)
-    setScore({ player1: 0, player2: 0 })
-  }
+    setOnStart(false);
+    setWinningPattern([]);
+    setBoardState([]);
+    setTime(45);
+    setPlayerTurn(1);
+    setPlayerWin(null);
+    setScore({
+      player1: score.player1,
+      player2: score.player2,
+    });
+    setOnStart(true);
+    initializeGame();
+  };
+
+  const onPause = () => {
+    setIsPaused(!isPaused)
+    setIsOpen(!isOpen)
+  };
 
   return (
     <div className="mx-auto mt-10 min-h-max max-w-[500px] px-5 md:max-w-[600px] xl:max-w-7xl">
+      <Menu
+        isShow={isOpen}
+        openChange={() => setIsOpen(!isOpen)}
+      />
       <div className="flex items-center justify-between xl:m-auto xl:max-w-[900px]">
         <Button
           variant={"menu"}
           size={"sm"}
           className="h-6 w-28 rounded-3xl py-5 font-bold text-white"
+          onClick={onPause}
         >
           MENU
         </Button>
@@ -263,15 +296,6 @@ const Page = (props: Props) => {
                       } bg-transparent md:mt-0 md:h-[65px] md:w-[65px] xl:h-[95px] xl:w-[95px]`}
                     onClick={() => handleColumnClick(rowIndex, columnIndex)}
                   >
-                    {/* {row?.player !== 0 ? (
-                      <img
-                        src={`/images/counter-${row?.player !== 1 ? "yellow" : "red"}-small.svg`}
-                        alt="counter"
-                        className={`absolute left-1/2 top-1/2 z-10 h-12 w-12 -translate-x-1/2 -translate-y-1/2 border-none md:h-[70px] md:w-[70px] xl:h-[100px] xl:w-[100px] ${row.falling ? "falling" : ""
-                          }`}
-                      />
-                    ) : null} */}
-
                     {row?.player !== 0 ? (
                       <>
                         <img
@@ -288,7 +312,6 @@ const Page = (props: Props) => {
                       </>
 
                     ) : null}
-
                   </div>
                 ))}
               </div>
@@ -307,7 +330,11 @@ const Page = (props: Props) => {
             className="absolute left-1/2 h-[350px] w-[350px] -translate-x-1/2 md:h-[500px] md:w-[600px] xl:h-[700px] xl:w-[800px]"
           />
           <div className="absolute -bottom-32 left-1/2 -translate-x-1/2">
-            <TurnsCard playerTurn={playerTurn} time={time} />
+            {playerWin ? (
+              <WinningCard playerWin={playerWin} playAgain={restart} />
+            ) : (
+              <TurnsCard playerTurn={playerTurn} time={time} />
+            )}
           </div>
         </div>
         <div className="hidden justify-end xl:flex xl:w-[200px]">
