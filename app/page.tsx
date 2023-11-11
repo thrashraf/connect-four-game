@@ -6,9 +6,19 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import GameRulesDialog from "@/components/game-rules-dialog"
+import { useRouter } from 'next/navigation'
+
+import { createGame } from "@/lib/gameLogic"
 
 export default function IndexPage() {
-  const [openDialog, setOpenDialog] = useState(false)
+  const [openDialog, setOpenDialog] = useState(false);
+  const router = useRouter();
+
+  const initializeGame = async () => {
+    const { gamesId, playerId } = await createGame();
+    localStorage.setItem("playerId", playerId);
+    router.push(`/room/${gamesId}`);
+  }
 
   return (
     <main className="flex h-screen items-center justify-center">
@@ -22,6 +32,21 @@ export default function IndexPage() {
             className="m-auto mt-10"
           />
           <div className="mt-20 flex flex-col space-y-5">
+            <Button
+              className="flex justify-between text-2xl font-bold shadow-custom"
+              onClick={initializeGame}
+            >
+              {/* <Link href={`/room/${gameCode}`} className="flex w-full justify-between"> */}
+              CREATE GAME
+              <Image
+                src={"/images/player-vs-player.svg"}
+                alt="arrow"
+                width={60}
+                height={60}
+                className="ml-2"
+              />
+              {/* </Link> */}
+            </Button>
             <Button
               className="flex justify-between text-2xl font-bold shadow-custom"
             >

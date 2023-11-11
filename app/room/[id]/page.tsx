@@ -10,6 +10,8 @@ import TurnsCard from "@/components/turns-card"
 import { type } from "os"
 import Menu from "@/components/menu"
 import WinningCard from "@/components/winning-card"
+import { isPlayer2Created } from "@/lib/gameLogic"
+import { useParams } from "next/navigation"
 
 type Props = {}
 
@@ -24,6 +26,9 @@ type Score = {
 }
 
 const Page = (props: Props) => {
+  // get the slug from the url
+  const params = useParams();
+
   const [hoveredColumn, setHoveredColumn] = React.useState<number | null>(null);
   const [boardState, setBoardState] = React.useState<Cell[][]>([]);
   const [playerTurn, setPlayerTurn] = React.useState<1 | 2>(1);
@@ -51,12 +56,32 @@ const Page = (props: Props) => {
   }
 
   useEffect(() => {
-    // Initialize the board state with empty cells
-    initializeGame()
-  }, []);
+    if (!params) return;
+
+    const fetchData = async () => {
+      try {
+        await isPlayer2Created(params?.id)
+          .then(player2Created => {
+            console.log(player2Created)
+            if (player2Created) {
+              setOnStart(true);
+              initializeGame();
+            }
+          })
+          .catch(error => {
+            console.error(error);
+          });
+      } catch (error) {
+        console.error('Error checking if Player 2 is created:', error);
+      }
+    };
+
+    fetchData();
+  }, [params]);
+
 
   React.useEffect(() => {
-    if (isPaused) return;
+    if (isPaused || !onStart) return;
 
     if (time === 0) {
       playerTurn === 1 ? setScore({ ...score, player2: score.player2 + 1 }) : setScore({ ...score, player1: score.player1 + 1 })
@@ -65,7 +90,7 @@ const Page = (props: Props) => {
 
     const timer = setTimeout(() => setTime(time - 1), 1000);
     return () => clearTimeout(timer);
-  }, [playerTurn, score, time, isPaused]);
+  }, [playerTurn, score, time, isPaused, onStart]);
 
   const handleColumnHover = (columnIndex: number) => {
     setHoveredColumn(columnIndex)
@@ -207,7 +232,7 @@ const Page = (props: Props) => {
     if (winner) {
       setTimeout(() => {
         setPlayerWin(winner);
-        winner === 1 ? setScore({ ...score, player2: score.player2 + 1 }) : setScore({ ...score, player1: score.player1 + 1 })
+        winner === 1 ? setScore({ ...score, player1: score.player1 + 1 }) : setScore({ ...score, player1: score.player2 + 1 })
       }, 1000)
     }
   }, [checkForWin, playerWin, score]);
