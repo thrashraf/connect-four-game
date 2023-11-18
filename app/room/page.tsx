@@ -1,13 +1,29 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import pb from '@/lib/pb'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Link } from 'lucide-react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { createUser } from '@/lib/api/gameLogic'
 
 const Page = () => {
+
+  const router = useRouter();
+
+  const [input, setInput] = useState('');
+
+  const joinRoom = async () => {
+    try {
+      createUser('player 2', input)
+      localStorage.setItem("player", '2')
+      router.push(`/room/${input}`)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
 
   return (
     <main className="flex h-screen items-center justify-center">
@@ -24,12 +40,14 @@ const Page = () => {
             <input
               placeholder='Enter room code'
               className='rounded-2xl border-4 border-black bg-white px-8 py-6 font-mono text-xl font-bold'
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
             />
             <Button
               className="flex justify-between text-2xl font-bold shadow-custom"
+              onClick={joinRoom}
             >
-              <Link href="/room" className="flex w-full justify-between">
-              </Link>
+              JOIN
             </Button>
           </div>
         </CardContent>

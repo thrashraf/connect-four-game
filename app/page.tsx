@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import GameRulesDialog from "@/components/game-rules-dialog"
 import { useRouter } from 'next/navigation'
 
-import { createGame } from "@/lib/gameLogic"
+import { createGame } from "@/lib/api/gameLogic"
 
 export default function IndexPage() {
   const [openDialog, setOpenDialog] = useState(false);
@@ -17,6 +17,7 @@ export default function IndexPage() {
   const initializeGame = async () => {
     const { gamesId, playerId } = await createGame();
     localStorage.setItem("playerId", playerId);
+    localStorage.setItem("player", '1')
     router.push(`/room/${gamesId}`);
   }
 

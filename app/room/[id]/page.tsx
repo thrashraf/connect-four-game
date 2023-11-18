@@ -10,8 +10,10 @@ import TurnsCard from "@/components/turns-card"
 import { type } from "os"
 import Menu from "@/components/menu"
 import WinningCard from "@/components/winning-card"
-import { isPlayer2Created } from "@/lib/gameLogic"
+import { checkWinner, getMoves, isPlayer2Created, updateMoves } from "@/lib/api/gameLogic"
 import { useParams } from "next/navigation"
+import { checkForDiagonalWin, checkForHorizontalWin, checkForVerticalWin } from "@/lib/utils"
+import { useMutation } from "@tanstack/react-query"
 
 type Props = {}
 
@@ -38,15 +40,23 @@ const Page = (props: Props) => {
     player1: 0,
     player2: 0,
   });
-
+  const [currentPlayer, setCurrentPlayer] = React.useState<number | null>(null);
   const [onStart, setOnStart] = React.useState<boolean>(false);
-
   const [playerWin, setPlayerWin] = React.useState<1 | 2 | null>(null);
   const [winningPattern, setWinningPattern] = React.useState<number[][]>([]);
-
   const [isOpen, setIsOpen] = React.useState<boolean>(false);
-
   // ==================================== FUNCTIONS ====================================
+
+  const { mutateAsync: saveWinner, status } = useMutation({
+    mutationKey: ['checkWinner'],
+    mutationFn: (props: any) => checkWinner(props?.winner, props?.gameId),
+    onError: (error) => {
+      console.log(error)
+    },
+    onSuccess: () => {
+      console.log('success')
+    }
+  });
 
   const initializeGame = () => {
     const board: Cell[][] = Array.from(Array(7), () =>
@@ -58,13 +68,18 @@ const Page = (props: Props) => {
   useEffect(() => {
     if (!params) return;
 
+    setCurrentPlayer(parseInt(localStorage.getItem("player") || '1'))
+
+    if (!currentPlayer) return;
+    if (boardState.length > 0) return;
+
     const fetchData = async () => {
       try {
         await isPlayer2Created(params?.id)
           .then(player2Created => {
-            console.log(player2Created)
             if (player2Created) {
               setOnStart(true);
+              setPlayerTurn(1);
               initializeGame();
             }
           })
@@ -76,11 +91,56 @@ const Page = (props: Props) => {
       }
     };
 
-    fetchData();
-  }, [params]);
+    if (currentPlayer === 1) {
+      fetchData();
+    } else {
+      setOnStart(true);
+      setPlayerTurn(1);
+      initializeGame();
+    }
+  }, [params, currentPlayer, boardState]);
+
+  useEffect(() => {
+    let isSubscribed = true; // Flag to track mounted state
+
+    const setupSubscription = async () => {
+      const unsubscribeFn = await getMoves(params?.id, (res) => {
+        if (isSubscribed && boardState && boardState.length > 0) {
+          const newBoardState = [...boardState];
+
+          newBoardState[res?.column][res?.row] = { player: res?.player === 'player 1' ? 1 : 2, falling: true };
+          setBoardState(newBoardState);
+
+          setTimeout(() => {
+            newBoardState[res?.column][res?.row] = { player: res?.player === 'player 1' ? 1 : 2, falling: false };
+            setBoardState(newBoardState);
+          }, 500);
+
+          setPlayerTurn(res?.player === 'player 1' ? 2 : 1);
+          setTime(45);
+        }
+      });
+
+      return unsubscribeFn;
+    }
+
+    setupSubscription().then((unsubscribeFn) => {
+      return () => {
+        if (unsubscribeFn) {
+          unsubscribeFn();
+        }
+      };
+    });
+
+    // Cleanup function to handle component unmount
+    return () => {
+      isSubscribed = false;
+    };
+  }, [boardState, params?.id]); // Only re-run if params.id changes
 
 
-  React.useEffect(() => {
+
+  useEffect(() => {
     if (isPaused || !onStart) return;
 
     if (time === 0) {
@@ -93,13 +153,12 @@ const Page = (props: Props) => {
   }, [playerTurn, score, time, isPaused, onStart]);
 
   const handleColumnHover = (columnIndex: number) => {
+    if (currentPlayer !== playerTurn || playerWin) return;
     setHoveredColumn(columnIndex)
   }
 
-  const handleColumnClick = (row: number, column: number) => {
-    //... existing code
-    //? check if the column is full
-    if (boardState[column][0]?.player !== 0 || playerWin) return
+  const handleColumnClick = async (row: number, column: number) => {
+    if (boardState[column][0]?.player !== 0 || playerWin || playerTurn !== currentPlayer) return
 
     //? find the last empty row
     let emptyRow = 0
@@ -110,132 +169,64 @@ const Page = (props: Props) => {
       }
     }
 
-    //? update the board state
-    const newBoardState = [...boardState]
-    newBoardState[column][emptyRow] = { player: playerTurn, falling: true }
+    try {
+      await updateMoves(params?.id, `player ${playerTurn}`, { column, row: emptyRow })
+        .then(() => {
+          const newBoardState = [...boardState]
+          newBoardState[column][emptyRow] = { player: playerTurn, falling: true }
 
-    setBoardState(newBoardState)
+          setBoardState(newBoardState)
 
-    // Remove the falling class after the animation is done
-    setTimeout(() => {
-      newBoardState[column][emptyRow] = { player: playerTurn, falling: false }
-      setBoardState(newBoardState)
-    }, 500)
+          setTimeout(() => {
+            newBoardState[column][emptyRow] = { player: playerTurn, falling: false }
+            setBoardState(newBoardState)
+          }, 500)
 
-    //? update the player turn
-    setPlayerTurn(playerTurn === 1 ? 2 : 1);
-
-    return setTime(45);
+          setPlayerTurn(playerTurn === 1 ? 2 : 1);
+          return setTime(45);
+        })
+    } catch (error) {
+      console.log(error)
+    }
   }
 
   const checkForWin = useCallback(() => {
-    //? check for vertical win
-    for (let i = 0; i < boardState.length; i++) {
-      for (let j = 0; j < boardState[i].length; j++) {
-        if (
-          boardState[i][j]?.player !== 0 &&
-          boardState[i][j]?.player === boardState?.[i]?.[j + 1]?.player &&
-          boardState[i][j]?.player === boardState?.[i]?.[j + 2]?.player &&
-          boardState[i][j]?.player === boardState?.[i]?.[j + 3]?.player
-        ) {
-          //? store the winning pattern
-          setTimeout(() => {
-            setWinningPattern([
-              [i, j],
-              [i, j + 1],
-              [i, j + 2],
-              [i, j + 3],
-            ])
-          }, 1000)
 
-          return boardState[i][j]?.player
-        }
-      }
-    }
+    const verticalWin = checkForVerticalWin(boardState);
+    if (verticalWin) return verticalWin;
 
-    //? check for horizontal win
-    for (let i = 0; i < boardState.length; i++) {
-      for (let j = 0; j < boardState[i].length; j++) {
-        if (
-          boardState[i][j]?.player !== 0 &&
-          boardState[i][j]?.player === boardState?.[i + 1]?.[j]?.player &&
-          boardState[i][j]?.player === boardState?.[i + 2]?.[j]?.player &&
-          boardState[i][j]?.player === boardState?.[i + 3]?.[j]?.player
-        ) {
-          //? store the winning pattern
-          setTimeout(() => {
-            setWinningPattern([
-              [i, j],
-              [i + 1, j],
-              [i + 2, j],
-              [i + 3, j],
-            ])
-          }, 1000)
-          return boardState[i][j]?.player
-        }
-      }
-    }
+    const horizontalWin = checkForHorizontalWin(boardState);
+    if (horizontalWin) return horizontalWin;
 
-    //? check for diagonal win (top left to bottom right)
-    for (let i = 0; i < boardState.length; i++) {
-      for (let j = 0; j < boardState[i].length; j++) {
-        if (
-          boardState[i][j]?.player !== 0 &&
-          boardState[i][j]?.player === boardState?.[i + 1]?.[j + 1]?.player &&
-          boardState[i][j]?.player === boardState?.[i + 2]?.[j + 2]?.player &&
-          boardState[i][j]?.player === boardState?.[i + 3]?.[j + 3]?.player
-        ) {
-          //? store the winning pattern
-          setTimeout(() => {
-            setWinningPattern([
-              [i, j],
-              [i + 1, j + 1],
-              [i + 2, j + 2],
-              [i + 3, j + 3],
-            ])
-          }, 1000)
-          return boardState[i][j]?.player
-        }
-      }
-    }
+    const diagonalWin = checkForDiagonalWin(boardState);
+    if (diagonalWin) return diagonalWin;
 
-    //? check for diagonal win (bottom left to top right)
-    for (let i = 0; i < boardState.length; i++) {
-      for (let j = 0; j < boardState[i].length; j++) {
-        if (
-          boardState[i][j]?.player !== 0 &&
-          boardState[i][j]?.player === boardState?.[i - 1]?.[j + 1]?.player &&
-          boardState[i][j]?.player === boardState?.[i - 2]?.[j + 2]?.player &&
-          boardState[i][j]?.player === boardState?.[i - 3]?.[j + 3]?.player
-        ) {
-          //? store the winning pattern
-          setTimeout(() => {
-            setWinningPattern([
-              [i, j],
-              [i - 1, j + 1],
-              [i - 2, j + 2],
-              [i - 3, j + 3],
-            ])
-          }, 1000)
-          return boardState[i][j]?.player
-        }
-      }
-    }
+    return null;
 
-    return null
   }, [boardState])
 
   useEffect(() => {
     if (playerWin) return;
-
-    const winner = checkForWin()
+    const winner = checkForWin();
     if (winner) {
-      setTimeout(() => {
-        setPlayerWin(winner);
-        winner === 1 ? setScore({ ...score, player1: score.player1 + 1 }) : setScore({ ...score, player1: score.player2 + 1 })
-      }, 1000)
+      (async () => {
+        if (winner?.player === 0 || !winner?.player || playerWin || status === 'pending' || status === 'success') return;
+        try {
+          console.log('nuts')
+          saveWinner?.({ winner: winner?.player, gameId: params?.id })
+            .then(() => {
+              setTimeout(() => {
+                setWinningPattern(winner.winningCells);
+                setPlayerWin(winner.player !== 0 ? winner.player : null);
+                winner?.player === 1 ? setScore({ ...score, player1: score.player1 + 1 }) : setScore({ ...score, player1: score.player2 + 1 })
+              }, 1000)
+            })
+        } catch (error) {
+          console.log(error)
+        }
+      })();
     }
-  }, [checkForWin, playerWin, score]);
+  }, [checkForWin, saveWinner, params?.id, playerWin, score, status]);
 
   const restart = () => {
     setOnStart(false);
