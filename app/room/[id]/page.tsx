@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
 
-import React, { useCallback, useEffect } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 
 import { Button } from "@/components/ui/button"
@@ -10,7 +10,7 @@ import TurnsCard from "@/components/turns-card"
 import { type } from "os"
 import Menu from "@/components/menu"
 import WinningCard from "@/components/winning-card"
-import { checkWinner, getMoves, isPlayer2Created, updateMoves } from "@/lib/api/gameLogic"
+import { checkWinner, gameStatus, getMoves, isPlayer2Created, restartGame, updateMoves } from "@/lib/api/gameLogic"
 import { useParams } from "next/navigation"
 import { checkForDiagonalWin, checkForHorizontalWin, checkForVerticalWin } from "@/lib/utils"
 import { useMutation } from "@tanstack/react-query"
@@ -30,6 +30,8 @@ type Score = {
 const Page = (props: Props) => {
   // get the slug from the url
   const params = useParams();
+
+  const [restartSignal, setRestartSignal] = useState(false);
 
   const [hoveredColumn, setHoveredColumn] = React.useState<number | null>(null);
   const [boardState, setBoardState] = React.useState<Cell[][]>([]);
@@ -81,6 +83,7 @@ const Page = (props: Props) => {
               setOnStart(true);
               setPlayerTurn(1);
               initializeGame();
+              setRestartSignal(!restartSignal)
             }
           })
           .catch(error => {
@@ -97,12 +100,13 @@ const Page = (props: Props) => {
       setOnStart(true);
       setPlayerTurn(1);
       initializeGame();
+      setRestartSignal(!restartSignal)
+
     }
-  }, [params, currentPlayer, boardState]);
+  }, [params, currentPlayer, boardState, onStart, restartSignal]);
 
   useEffect(() => {
     let isSubscribed = true; // Flag to track mounted state
-
     const setupSubscription = async () => {
       const unsubscribeFn = await getMoves(params?.id, (res) => {
         if (isSubscribed && boardState && boardState.length > 0) {
@@ -118,9 +122,9 @@ const Page = (props: Props) => {
 
           setPlayerTurn(res?.player === 'player 1' ? 2 : 1);
           setTime(45);
+          setRestartSignal(!restartSignal)
         }
       });
-
       return unsubscribeFn;
     }
 
@@ -136,7 +140,40 @@ const Page = (props: Props) => {
     return () => {
       isSubscribed = false;
     };
-  }, [boardState, params?.id]); // Only re-run if params.id changes
+  }, [boardState, params?.id, restartSignal]); // Only re-run if params.id changes
+
+
+  useEffect(() => {
+    let isSubscribed = true;
+    let unsubscribeFunc: () => void;
+
+    // Async function to handle subscription
+    const setupSubscription = async () => {
+      unsubscribeFunc = await gameStatus(params.id, (action) => {
+        if (isSubscribed && action === 'start') {
+          // Perform the necessary actions when the game starts
+          setRestartSignal(false);
+          setOnStart(true);
+          setPlayerTurn(1);
+          initializeGame();
+          setPlayerWin(null);
+          setWinningPattern([]);
+          setTime(45);
+        }
+      });
+    };
+
+    setupSubscription();
+
+    // Cleanup function to handle component unmount
+    return () => {
+      isSubscribed = false;
+      if (unsubscribeFunc) {
+        unsubscribeFunc(); // Unsubscribe from the updates
+      }
+    };
+  }, [params.id, playerWin, restartSignal]);
+
 
 
 
@@ -191,7 +228,6 @@ const Page = (props: Props) => {
   }
 
   const checkForWin = useCallback(() => {
-
     const verticalWin = checkForVerticalWin(boardState);
     if (verticalWin) return verticalWin;
 
@@ -202,7 +238,6 @@ const Page = (props: Props) => {
     if (diagonalWin) return diagonalWin;
 
     return null;
-
   }, [boardState])
 
   useEffect(() => {
@@ -210,15 +245,15 @@ const Page = (props: Props) => {
     const winner = checkForWin();
     if (winner) {
       (async () => {
-        if (winner?.player === 0 || !winner?.player || playerWin || status === 'pending' || status === 'success') return;
+        if (winner?.player === 0 || !winner?.player || playerWin || status === 'pending') return;
         try {
-          console.log('nuts')
           saveWinner?.({ winner: winner?.player, gameId: params?.id })
-            .then(() => {
+            .then(async () => {
+              // await restartGame(params.id, 'resume');
               setTimeout(() => {
                 setWinningPattern(winner.winningCells);
                 setPlayerWin(winner.player !== 0 ? winner.player : null);
-                winner?.player === 1 ? setScore({ ...score, player1: score.player1 + 1 }) : setScore({ ...score, player1: score.player2 + 1 })
+                winner?.player === 1 ? setScore({ ...score, player1: score.player1 + 1 }) : setScore({ ...score, player2: score.player2 + 1 })
               }, 1000)
             })
         } catch (error) {
@@ -229,18 +264,12 @@ const Page = (props: Props) => {
   }, [checkForWin, saveWinner, params?.id, playerWin, score, status]);
 
   const restart = () => {
-    setOnStart(false);
-    setWinningPattern([]);
-    setBoardState([]);
-    setTime(45);
-    setPlayerTurn(1);
-    setPlayerWin(null);
-    setScore({
-      player1: score.player1,
-      player2: score.player2,
-    });
-    setOnStart(true);
-    initializeGame();
+    try {
+      setRestartSignal(true)
+      return restartGame(params.id, 'start')
+    } catch (error) {
+      console.log(error)
+    }
   };
 
   const onPause = () => {
@@ -294,7 +323,7 @@ const Page = (props: Props) => {
                 className={`z-10 flex flex-col md:gap-3`}
                 onMouseEnter={() => handleColumnHover(columnIndex)}
               >
-                {hoveredColumn === columnIndex ? (
+                {hoveredColumn === columnIndex && playerTurn === currentPlayer ? (
                   <img
                     src={`/images/marker-${playerTurn === 1 ? "red" : "yellow"
                       }.svg`}

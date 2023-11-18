@@ -18,6 +18,9 @@ export default function IndexPage() {
     const { gamesId, playerId } = await createGame();
     localStorage.setItem("playerId", playerId);
     localStorage.setItem("player", '1')
+
+    if (!gamesId) return;
+
     router.push(`/room/${gamesId}`);
   }
 

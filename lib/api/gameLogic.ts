@@ -44,6 +44,20 @@ export async function createGame(): Promise<any> {
   }
 }
 
+// Assuming pb is your PocketBase client instance
+export async function gameStatus(gameId: string, callback: (action: string) => void) {
+  // Subscribe to the 'games' collection changes
+  const unsubscribe = await pb.collection('games').subscribe('*', (e) => {
+    if (e.record.id === gameId) {
+      // Invoke the callback with the action of the record
+      callback(e?.record?.action);
+    }
+  });
+
+  // Return a function to unsubscribe when needed
+  return unsubscribe;
+}
+
 
 export async function isPlayer2Created(gameId: string): Promise<boolean> {
   try {
@@ -101,12 +115,21 @@ export const updateMoves = async (gameId: string, player: 'player 1' | 'player 2
 }
 
 export const checkWinner = async (player: 1 | 2, gameId: string) => {
-  console.log('nuts')
   try {
     return await pb?.collection('winning').create({
       gameId,
       player
     })
+  } catch (error) {
+    throw error;
+  }
+}
+
+export const restartGame = async (gameId: string, action: 'start' | 'resume' | 'paused') => { 
+  try {
+    return await pb?.collection('games').update(gameId, {
+      action
+    });
   } catch (error) {
     throw error;
   }
