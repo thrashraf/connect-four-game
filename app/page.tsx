@@ -17,11 +17,12 @@ export default function IndexPage() {
   const initializeGame = async () => {
     const { gamesId, playerId } = await createGame();
     localStorage.setItem("playerId", playerId);
-    localStorage.setItem("player", '1')
+    localStorage.setItem("player", '1');
+    localStorage.setItem("id", gamesId);
 
     if (!gamesId) return;
 
-    router.push(`/room/${gamesId}`);
+    router.push(`/create-room`);
   }
 
   return (
