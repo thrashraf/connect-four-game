@@ -65,8 +65,6 @@ const Page = () => {
                 toast({
                   title: "Copied to clipboard 🎉",
                   description: "You can now share this room code with your friends!",
-                  status: "success",
-                  isClosable: true,
                 })
               }}
             >
