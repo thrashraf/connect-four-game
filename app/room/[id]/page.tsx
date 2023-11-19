@@ -33,20 +33,20 @@ const Page = (props: Props) => {
 
   const [restartSignal, setRestartSignal] = useState(false);
 
-  const [hoveredColumn, setHoveredColumn] = React.useState<number | null>(null);
-  const [boardState, setBoardState] = React.useState<Cell[][]>([]);
-  const [playerTurn, setPlayerTurn] = React.useState<1 | 2>(1);
-  const [time, setTime] = React.useState<number>(45);
-  const [isPaused, setIsPaused] = React.useState<boolean>(false);
-  const [score, setScore] = React.useState<Score>({
+  const [hoveredColumn, setHoveredColumn] = useState<number | null>(null);
+  const [boardState, setBoardState] = useState<Cell[][]>([]);
+  const [playerTurn, setPlayerTurn] = useState<1 | 2>(1);
+  const [time, setTime] = useState<number>(45);
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [score, setScore] = useState<Score>({
     player1: 0,
     player2: 0,
   });
-  const [currentPlayer, setCurrentPlayer] = React.useState<number | null>(null);
-  const [onStart, setOnStart] = React.useState<boolean>(false);
-  const [playerWin, setPlayerWin] = React.useState<1 | 2 | null>(null);
-  const [winningPattern, setWinningPattern] = React.useState<number[][]>([]);
-  const [isOpen, setIsOpen] = React.useState<boolean>(false);
+  const [currentPlayer, setCurrentPlayer] = useState<number | null>(null);
+  const [onStart, setOnStart] = useState<boolean>(false);
+  const [playerWin, setPlayerWin] = useState<1 | 2 | null>(null);
+  const [winningPattern, setWinningPattern] = useState<number[][]>([]);
+  const [isOpen, setIsOpen] = useState<boolean>(false);
   // ==================================== FUNCTIONS ====================================
 
   const { mutateAsync: saveWinner, status } = useMutation({
@@ -83,7 +83,8 @@ const Page = (props: Props) => {
               setOnStart(true);
               setPlayerTurn(1);
               initializeGame();
-              setRestartSignal(!restartSignal)
+              setRestartSignal(!restartSignal);
+              setIsPlayer2Joined(true);
             }
           })
           .catch(error => {
