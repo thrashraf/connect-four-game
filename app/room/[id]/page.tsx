@@ -287,7 +287,7 @@ const Page = (props: Props) => {
         // }
       })()
     }
-  }, [checkForWin, saveWinner, params?.id, playerWin, score, status])
+  }, [checkForWin, saveWinner, params.id, playerWin, score])
 
   const restart = () => {
     try {

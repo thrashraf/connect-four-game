@@ -59,29 +59,30 @@ const Page = () => {
           <p className='mt-10 text-xl font-semibold text-white'>Ready to play? Share the Room ID with player 2 to start the game!</p>
           <div className="mt-10 flex flex-col space-y-5">
             <WaitingCard id={id} />
-
-            <WhatsappShareButton
-              url={`${window?.location?.origin}/room/${id}`}
-              title="Let's play!"
-              className='w-full'
-            >
-              <Button
-                className="w-full text-2xl font-bold shadow-custom"
-              // onClick={() => {
-              //   navigator.clipboard.writeText(
-              //     //? copy the url with the room id
-              //     `${window?.location?.origin}/room/${id}`
-              //   )
-              //   toast({
-              //     title: "Copied to clipboard 🎉",
-              //     description: "You can now share this room code with your friends!",
-              //   })
-              // }}
+            {typeof window !== 'undefined' && window?.location?.origin && (
+              <WhatsappShareButton
+                url={`${window?.location?.origin}/room/${id}`}
+                title="Let's play!"
+                className='w-full'
               >
-                <span className='mr-5'>COPY ROOM ID</span>
-                <Icons.whatsapp className='w-10' />
-              </Button>
-            </WhatsappShareButton>
+                <Button
+                  className="w-full text-2xl font-bold shadow-custom"
+                // onClick={() => {
+                //   navigator.clipboard.writeText(
+                //     //? copy the url with the room id
+                //     `${window?.location?.origin}/room/${id}`
+                //   )
+                //   toast({
+                //     title: "Copied to clipboard 🎉",
+                //     description: "You can now share this room code with your friends!",
+                //   })
+                // }}
+                >
+                  <span className='mr-5'>COPY ROOM ID</span>
+                  <Icons.whatsapp className='w-10' />
+                </Button>
+              </WhatsappShareButton>
+            )}
           </div>
 
         </CardContent>
