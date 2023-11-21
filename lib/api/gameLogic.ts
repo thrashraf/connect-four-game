@@ -74,10 +74,11 @@ export async function isPlayer2Created(gameId: string): Promise<boolean> {
       });
 
       // Set a timeout for the case where Player 2 is not found
+      // Timeout is now set to 30 minutes (1,800,000 milliseconds)
       timeout = window.setTimeout(() => {
         unsubscribe();
-        reject(new Error('Player 2 not found within the specified time'));
-      }, 30000);
+        reject(new Error('Player 2 not found within 30 minutes'));
+      }, 1800000);
     });
   } catch (error) {
     console.error('Error checking if Player 2 is created:', error);
