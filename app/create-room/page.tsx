@@ -10,6 +10,7 @@ import { isPlayer2Created } from '@/lib/api/gameLogic'
 import WaitingCard from '@/components/waiting-card'
 import { Icons } from '@/components/icons'
 import { useToast } from "@/components/ui/use-toast"
+import { WhatsappShareButton } from "react-share";
 
 
 const Page = () => {
@@ -58,22 +59,31 @@ const Page = () => {
           <p className='mt-10 text-xl font-semibold text-white'>Ready to play? Share the Room ID with player 2 to start the game!</p>
           <div className="mt-10 flex flex-col space-y-5">
             <WaitingCard id={id} />
-            <Button
-              className="text-2xl font-bold shadow-custom"
-              onClick={() => {
-                navigator.clipboard.writeText(
-                  //? copy the url with the room id
-                  `${window?.location?.origin}/room/${id}`
-                )
-                toast({
-                  title: "Copied to clipboard 🎉",
-                  description: "You can now share this room code with your friends!",
-                })
-              }}
+
+            <WhatsappShareButton
+              url={`${window?.location?.origin}/room/${id}`}
+              title="Let's play!"
+              className='w-full'
             >
-              <span className='mr-5'>COPY ROOM ID</span> <Icons.copy className='w-10' />
-            </Button>
+              <Button
+                className="w-full text-2xl font-bold shadow-custom"
+              // onClick={() => {
+              //   navigator.clipboard.writeText(
+              //     //? copy the url with the room id
+              //     `${window?.location?.origin}/room/${id}`
+              //   )
+              //   toast({
+              //     title: "Copied to clipboard 🎉",
+              //     description: "You can now share this room code with your friends!",
+              //   })
+              // }}
+              >
+                <span className='mr-5'>COPY ROOM ID</span>
+                <Icons.whatsapp className='w-10' />
+              </Button>
+            </WhatsappShareButton>
           </div>
+
         </CardContent>
       </Card>
     </main>
