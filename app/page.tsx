@@ -1,29 +1,42 @@
-'use client'
+"use client"
+
 import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useMutation } from "@tanstack/react-query"
 
+import { createGame } from "@/lib/api/gameLogic"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import GameRulesDialog from "@/components/game-rules-dialog"
-import { useRouter } from 'next/navigation'
-
-import { createGame } from "@/lib/api/gameLogic"
+import { Icons } from "@/components/icons"
 
 export default function IndexPage() {
-  const [openDialog, setOpenDialog] = useState(false);
-  const router = useRouter();
+  const [openDialog, setOpenDialog] = useState(false)
+  const router = useRouter()
 
-  const initializeGame = async () => {
-    const { gamesId, playerId } = await createGame();
-    localStorage.setItem("playerId", playerId);
-    localStorage.setItem("player", '1');
-    localStorage.setItem("id", gamesId);
+  const {
+    mutateAsync: initializeGame,
+    status,
+    isPending,
+  } = useMutation({
+    mutationKey: ["checkWinner"],
+    mutationFn: () => createGame(),
+    onError: (error) => {
+      console.log(error)
+    },
+    onSuccess: (props) => {
+      console.log(props)
+      localStorage.setItem("playerId", props?.playerId)
+      localStorage.setItem("player", "1")
+      localStorage.setItem("id", props?.gamesId)
 
-    if (!gamesId) return;
+      if (!props?.gamesId) return
 
-    router.push(`/create-room`);
-  }
+      router.push(`/create-room`)
+    },
+  })
 
   return (
     <main className="flex h-screen items-center justify-center">
@@ -39,22 +52,24 @@ export default function IndexPage() {
           <div className="mt-20 flex flex-col space-y-5">
             <Button
               className="flex justify-between text-2xl font-bold shadow-custom"
-              onClick={initializeGame}
+              onClick={() => initializeGame()}
             >
               {/* <Link href={`/room/${gameCode}`} className="flex w-full justify-between"> */}
               CREATE GAME
-              <Image
-                src={"/images/player-vs-player.svg"}
-                alt="arrow"
-                width={60}
-                height={60}
-                className="ml-2"
-              />
+              {isPending ? (
+                <Icons.spinner className="animate-spin" />
+              ) : (
+                <Image
+                  src={"/images/player-vs-player.svg"}
+                  alt="arrow"
+                  width={60}
+                  height={60}
+                  className="ml-2"
+                />
+              )}
               {/* </Link> */}
             </Button>
-            <Button
-              className="flex justify-between text-2xl font-bold shadow-custom"
-            >
+            <Button className="flex justify-between text-2xl font-bold shadow-custom">
               <Link href="/room" className="flex w-full justify-between">
                 MULTIPLAYER
                 <Image
