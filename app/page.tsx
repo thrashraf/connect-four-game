@@ -55,7 +55,7 @@ export default function IndexPage() {
               onClick={() => initializeGame()}
             >
               {/* <Link href={`/room/${gameCode}`} className="flex w-full justify-between"> */}
-              CREATE GAME
+              MULTIPLAYER
               {isPending ? (
                 <Icons.spinner className="animate-spin" />
               ) : (
@@ -69,7 +69,7 @@ export default function IndexPage() {
               )}
               {/* </Link> */}
             </Button>
-            <Button className="flex justify-between text-2xl font-bold shadow-custom">
+            {/* <Button className="flex justify-between text-2xl font-bold shadow-custom">
               <Link href="/room" className="flex w-full justify-between">
                 MULTIPLAYER
                 <Image
@@ -80,7 +80,7 @@ export default function IndexPage() {
                   className="ml-2"
                 />
               </Link>
-            </Button>
+            </Button> */}
             <Button
               variant={"secondary"}
               className="flex justify-start text-2xl font-bold shadow-custom"

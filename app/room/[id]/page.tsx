@@ -9,9 +9,9 @@ import { useMutation } from "@tanstack/react-query"
 
 import {
   checkWinner,
+  createUser,
   gameStatus,
   getMoves,
-  isPlayer2Created,
   restartGame,
   updateMoves,
 } from "@/lib/api/gameLogic"
@@ -60,14 +60,16 @@ const Page = (props: Props) => {
   const [isOpen, setIsOpen] = useState<boolean>(false)
   // ==================================== FUNCTIONS ====================================
 
-  const { mutateAsync: saveWinner, status } = useMutation({
+  const { mutateAsync: saveWinner } = useMutation({
     mutationKey: ["checkWinner"],
     mutationFn: (props: any) => checkWinner(props?.winner, props?.gameId),
-    onError: (error) => {
-      console.log(error)
-    },
+  })
+
+  const { mutateAsync: createPlayer2 } = useMutation({
+    mutationKey: ["createPlayer2"],
+    mutationFn: (props: any) => createUser(props?.player, props?.gameId),
     onSuccess: () => {
-      console.log("success")
+      localStorage.setItem("player", "2")
     },
   })
 
@@ -79,18 +81,23 @@ const Page = (props: Props) => {
   }
 
   useEffect(() => {
-    if (!params) return
+    if (!params || boardState.length > 0) return
 
     setCurrentPlayer(parseInt(localStorage.getItem("player") || "1"))
 
-    if (!currentPlayer) return
-    if (boardState.length > 0) return
+    const createPlayerAsync = async () => {
+      if (!currentPlayer) {
+        await createPlayer2({ player: "player 2", gameId: params?.id })
+      }
 
-    setOnStart(true)
-    setPlayerTurn(1)
-    initializeGame()
-    setRestartSignal(!restartSignal)
-  }, [params, currentPlayer, boardState, onStart, restartSignal])
+      setOnStart(true)
+      setPlayerTurn(1)
+      initializeGame()
+      setRestartSignal(!restartSignal)
+    }
+
+    createPlayerAsync()
+  }, [params, currentPlayer, boardState, onStart, restartSignal, createPlayer2])
 
   useEffect(() => {
     let isSubscribed = true // Flag to track mounted state
@@ -130,10 +137,10 @@ const Page = (props: Props) => {
     })
 
     // Cleanup function to handle component unmount
-    return () => {
-      isSubscribed = false
-    }
-  }, [boardState, params?.id, restartSignal]) // Only re-run if params.id changes
+    // return () => {
+    //   isSubscribed = false
+    // }
+  }, [boardState, params?.id, restartSignal]);
 
   useEffect(() => {
     let isSubscribed = true
@@ -253,22 +260,31 @@ const Page = (props: Props) => {
           status === "pending"
         )
           return
-        try {
-          saveWinner?.({ winner: winner?.player, gameId: params?.id }).then(
-            async () => {
-              // await restartGame(params.id, 'resume');
-              setTimeout(() => {
-                setWinningPattern(winner.winningCells)
-                setPlayerWin(winner.player !== 0 ? winner.player : null)
-                winner?.player === 1
-                  ? setScore({ ...score, player1: score.player1 + 1 })
-                  : setScore({ ...score, player2: score.player2 + 1 })
-              }, 1000)
-            }
-          )
-        } catch (error) {
-          console.log(error)
-        }
+
+        setTimeout(() => {
+          setWinningPattern(winner.winningCells)
+          setPlayerWin(winner.player !== 0 ? winner.player : null)
+          winner?.player === 1
+            ? setScore({ ...score, player1: score.player1 + 1 })
+            : setScore({ ...score, player2: score.player2 + 1 })
+        }, 1000)
+
+        // try {
+        //   saveWinner?.({ winner: winner?.player, gameId: params?.id }).then(
+        //     async () => {
+        //       // await restartGame(params.id, 'resume');
+        //       setTimeout(() => {
+        //         setWinningPattern(winner.winningCells)
+        //         setPlayerWin(winner.player !== 0 ? winner.player : null)
+        //         winner?.player === 1
+        //           ? setScore({ ...score, player1: score.player1 + 1 })
+        //           : setScore({ ...score, player2: score.player2 + 1 })
+        //       }, 1000)
+        //     }
+        //   )
+        // } catch (error) {
+        //   console.log(error)
+        // }
       })()
     }
   }, [checkForWin, saveWinner, params?.id, playerWin, score, status])

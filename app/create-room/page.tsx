@@ -61,7 +61,10 @@ const Page = () => {
             <Button
               className="text-2xl font-bold shadow-custom"
               onClick={() => {
-                navigator.clipboard.writeText(id)
+                navigator.clipboard.writeText(
+                  //? copy the url with the room id
+                  `${window?.location?.origin}/room/${id}`
+                )
                 toast({
                   title: "Copied to clipboard 🎉",
                   description: "You can now share this room code with your friends!",
