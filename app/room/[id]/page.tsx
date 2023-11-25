@@ -69,8 +69,9 @@ const Page = (props: Props) => {
     mutationKey: ["createPlayer2"],
     mutationFn: (props: any) => createUser(props?.player, props?.gameId),
     onSuccess: () => {
-      localStorage.setItem("player", "2")
-    },
+      localStorage.setItem("player", "2");
+      setCurrentPlayer(2)
+    }
   })
 
   const initializeGame = () => {
@@ -83,10 +84,10 @@ const Page = (props: Props) => {
   useEffect(() => {
     if (!params || boardState.length > 0) return
 
-    setCurrentPlayer(parseInt(localStorage.getItem("player") || "1"))
+    setCurrentPlayer(parseInt(localStorage.getItem("player") || "1"));
 
     const createPlayerAsync = async () => {
-      if (!currentPlayer) {
+      if (!localStorage.getItem("player")) {
         await createPlayer2({ player: "player 2", gameId: params?.id })
       }
 
@@ -135,11 +136,6 @@ const Page = (props: Props) => {
         }
       }
     })
-
-    // Cleanup function to handle component unmount
-    // return () => {
-    //   isSubscribed = false
-    // }
   }, [boardState, params?.id, restartSignal]);
 
   useEffect(() => {
@@ -154,6 +150,7 @@ const Page = (props: Props) => {
           setRestartSignal(false)
           setOnStart(true)
           setPlayerTurn(1)
+          setBoardState([])
           initializeGame()
           setPlayerWin(null)
           setWinningPattern([])
@@ -188,19 +185,21 @@ const Page = (props: Props) => {
   }, [playerTurn, score, time, isPaused, onStart])
 
   const handleColumnHover = (columnIndex: number) => {
+
+    console.log(currentPlayer, 'currentPlayer', playerTurn, 'playerTurn', playerWin, 'playerWin')
+
     if (currentPlayer !== playerTurn || playerWin) return
     setHoveredColumn(columnIndex)
   }
 
   const handleColumnClick = async (row: number, column: number) => {
+
     if (
       boardState[column][0]?.player !== 0 ||
       playerWin ||
       playerTurn !== currentPlayer
     )
       return
-
-    //? find the last empty row
     let emptyRow = 0
 
     for (let i = 0; i < boardState[column].length; i++) {
@@ -266,25 +265,8 @@ const Page = (props: Props) => {
           setPlayerWin(winner.player !== 0 ? winner.player : null)
           winner?.player === 1
             ? setScore({ ...score, player1: score.player1 + 1 })
-            : setScore({ ...score, player2: score.player2 + 1 })
+            : setScore({ ...score, player2: score.player2 + 1 });
         }, 1000)
-
-        // try {
-        //   saveWinner?.({ winner: winner?.player, gameId: params?.id }).then(
-        //     async () => {
-        //       // await restartGame(params.id, 'resume');
-        //       setTimeout(() => {
-        //         setWinningPattern(winner.winningCells)
-        //         setPlayerWin(winner.player !== 0 ? winner.player : null)
-        //         winner?.player === 1
-        //           ? setScore({ ...score, player1: score.player1 + 1 })
-        //           : setScore({ ...score, player2: score.player2 + 1 })
-        //       }, 1000)
-        //     }
-        //   )
-        // } catch (error) {
-        //   console.log(error)
-        // }
       })()
     }
   }, [checkForWin, saveWinner, params.id, playerWin, score])
