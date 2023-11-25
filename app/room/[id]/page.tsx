@@ -42,8 +42,6 @@ const Page = (props: Props) => {
   // get the slug from the url
   const params = useParams()
 
-  const [restartSignal, setRestartSignal] = useState(false)
-
   const [hoveredColumn, setHoveredColumn] = useState<number | null>(null)
   const [boardState, setBoardState] = useState<Cell[][]>([])
   const [playerTurn, setPlayerTurn] = useState<1 | 2>(1)
@@ -59,11 +57,6 @@ const Page = (props: Props) => {
   const [winningPattern, setWinningPattern] = useState<number[][]>([])
   const [isOpen, setIsOpen] = useState<boolean>(false)
   // ==================================== FUNCTIONS ====================================
-
-  const { mutateAsync: saveWinner } = useMutation({
-    mutationKey: ["checkWinner"],
-    mutationFn: (props: any) => checkWinner(props?.winner, props?.gameId),
-  })
 
   const { mutateAsync: createPlayer2 } = useMutation({
     mutationKey: ["createPlayer2"],
@@ -82,7 +75,7 @@ const Page = (props: Props) => {
   }
 
   useEffect(() => {
-    if (!params || boardState.length > 0) return
+    if (!params || currentPlayer) return
 
     setCurrentPlayer(parseInt(localStorage.getItem("player") || "1"));
 
@@ -90,53 +83,66 @@ const Page = (props: Props) => {
       if (!localStorage.getItem("player")) {
         await createPlayer2({ player: "player 2", gameId: params?.id })
       }
-
       setOnStart(true)
       setPlayerTurn(1)
       initializeGame()
-      setRestartSignal(!restartSignal)
     }
 
     createPlayerAsync()
-  }, [params, currentPlayer, boardState, onStart, restartSignal, createPlayer2])
+  }, [params, currentPlayer, createPlayer2])
 
   useEffect(() => {
-    let isSubscribed = true // Flag to track mounted state
+    let isSubscribed = true; // Flag to track mounted state
+
     const setupSubscription = async () => {
       const unsubscribeFn = await getMoves(params?.id, (res) => {
-        if (isSubscribed && boardState && boardState.length > 0) {
-          const newBoardState = [...boardState]
-
-          newBoardState[res?.column][res?.row] = {
-            player: res?.player === "player 1" ? 1 : 2,
-            falling: true,
-          }
-          setBoardState(newBoardState)
-
-          setTimeout(() => {
+        if (isSubscribed) {
+          // Using functional update to ensure we're working with the most recent state
+          setBoardState(prevBoardState => {
+            const newBoardState = prevBoardState.map(row => [...row]); // Deep copy of the board
             newBoardState[res?.column][res?.row] = {
               player: res?.player === "player 1" ? 1 : 2,
-              falling: false,
-            }
-            setBoardState(newBoardState)
-          }, 500)
+              falling: true,
+            };
+            return newBoardState;
+          });
 
-          setPlayerTurn(res?.player === "player 1" ? 2 : 1)
-          setTime(45)
-          setRestartSignal(!restartSignal)
+          // Set the timeout for falling animation
+          setTimeout(() => {
+            setBoardState(prevBoardState => {
+              const newBoardState = prevBoardState.map(row => [...row]); // Deep copy of the board
+              newBoardState[res?.column][res?.row] = {
+                player: res?.player === "player 1" ? 1 : 2,
+                falling: false,
+              };
+              return newBoardState;
+            });
+          }, 500);
+
+          // Update player turn and reset timer
+          setPlayerTurn(res?.player === "player 1" ? 2 : 1);
+          setTime(45);
         }
-      })
-      return unsubscribeFn
-    }
+      });
+
+      return unsubscribeFn;
+    };
 
     setupSubscription().then((unsubscribeFn) => {
       return () => {
         if (unsubscribeFn) {
-          unsubscribeFn()
+          unsubscribeFn(); // Clean up the subscription
         }
-      }
-    })
-  }, [boardState, params?.id, restartSignal]);
+        isSubscribed = false;
+      };
+    });
+
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      isSubscribed = false;
+    };
+  }, [params?.id]); // Dependency array
+
 
   useEffect(() => {
     let isSubscribed = true
@@ -147,20 +153,19 @@ const Page = (props: Props) => {
       unsubscribeFunc = await gameStatus(params.id, (action) => {
         if (isSubscribed && action === "start") {
           // Perform the necessary actions when the game starts
-          setRestartSignal(false)
-          setOnStart(true)
-          setPlayerTurn(1)
-          setBoardState([])
-          initializeGame()
-          setPlayerWin(null)
-          setWinningPattern([])
+          initializeGame();
+          setWinningPattern([]);
+          setPlayerTurn(1);
+          setPlayerWin(null);
           setTime(45)
+          setScore({ player1: score.player1, player2: score.player2 })
+          setHoveredColumn(null)
+          setOnStart(true)
+          setIsPaused(false)
         }
       })
     }
-
     setupSubscription()
-
     // Cleanup function to handle component unmount
     return () => {
       isSubscribed = false
@@ -168,7 +173,7 @@ const Page = (props: Props) => {
         unsubscribeFunc() // Unsubscribe from the updates
       }
     }
-  }, [params.id, playerWin, restartSignal])
+  }, [params.id, score.player1, score.player2]);
 
   useEffect(() => {
     if (isPaused || !onStart) return
@@ -182,18 +187,14 @@ const Page = (props: Props) => {
 
     const timer = setTimeout(() => setTime(time - 1), 1000)
     return () => clearTimeout(timer)
-  }, [playerTurn, score, time, isPaused, onStart])
+  }, [isPaused, onStart, playerTurn, score, time])
 
   const handleColumnHover = (columnIndex: number) => {
-
-    console.log(currentPlayer, 'currentPlayer', playerTurn, 'playerTurn', playerWin, 'playerWin')
-
     if (currentPlayer !== playerTurn || playerWin) return
     setHoveredColumn(columnIndex)
   }
 
   const handleColumnClick = async (row: number, column: number) => {
-
     if (
       boardState[column][0]?.player !== 0 ||
       playerWin ||
@@ -207,27 +208,10 @@ const Page = (props: Props) => {
         emptyRow = i
       }
     }
-
     try {
       await updateMoves(params?.id, `player ${playerTurn}`, {
         column,
         row: emptyRow,
-      }).then(() => {
-        const newBoardState = [...boardState]
-        newBoardState[column][emptyRow] = { player: playerTurn, falling: true }
-
-        setBoardState(newBoardState)
-
-        setTimeout(() => {
-          newBoardState[column][emptyRow] = {
-            player: playerTurn,
-            falling: false,
-          }
-          setBoardState(newBoardState)
-        }, 500)
-
-        setPlayerTurn(playerTurn === 1 ? 2 : 1)
-        return setTime(45)
       })
     } catch (error) {
       console.log(error)
@@ -248,32 +232,28 @@ const Page = (props: Props) => {
   }, [boardState])
 
   useEffect(() => {
-    if (playerWin) return
+    if (playerWin || !onStart) return
+
     const winner = checkForWin()
     if (winner) {
-      ; (async () => {
-        if (
-          winner?.player === 0 ||
-          !winner?.player ||
-          playerWin ||
-          status === "pending"
-        )
-          return
-
-        setTimeout(() => {
-          setWinningPattern(winner.winningCells)
-          setPlayerWin(winner.player !== 0 ? winner.player : null)
-          winner?.player === 1
-            ? setScore({ ...score, player1: score.player1 + 1 })
-            : setScore({ ...score, player2: score.player2 + 1 });
-        }, 1000)
-      })()
+      if (
+        winner?.player === 0 ||
+        !winner?.player ||
+        playerWin
+      )
+        return
+      setTimeout(() => {
+        setWinningPattern(winner.winningCells)
+        setPlayerWin(winner.player !== 0 ? winner.player : null)
+        winner?.player === 1
+          ? setScore({ ...score, player1: score.player1 + 1 })
+          : setScore({ ...score, player2: score.player2 + 1 });
+      }, 1000)
     }
-  }, [checkForWin, saveWinner, params.id, playerWin, score])
+  }, [checkForWin, playerWin, onStart, score, boardState])
 
   const restart = () => {
     try {
-      setRestartSignal(true)
       return restartGame(params.id, "start")
     } catch (error) {
       console.log(error)
