@@ -54,7 +54,6 @@ export default function IndexPage() {
               className="flex justify-between text-2xl font-bold shadow-custom"
               onClick={() => initializeGame()}
             >
-              {/* <Link href={`/room/${gameCode}`} className="flex w-full justify-between"> */}
               MULTIPLAYER
               {isPending ? (
                 <Icons.spinner className="animate-spin" />
@@ -67,20 +66,7 @@ export default function IndexPage() {
                   className="ml-2"
                 />
               )}
-              {/* </Link> */}
             </Button>
-            {/* <Button className="flex justify-between text-2xl font-bold shadow-custom">
-              <Link href="/room" className="flex w-full justify-between">
-                MULTIPLAYER
-                <Image
-                  src={"/images/player-vs-player.svg"}
-                  alt="arrow"
-                  width={60}
-                  height={60}
-                  className="ml-2"
-                />
-              </Link>
-            </Button> */}
             <Button
               variant={"secondary"}
               className="flex justify-start text-2xl font-bold shadow-custom"
