@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useEffect, useState } from 'react'
-import pb from '@/lib/pb'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Image from 'next/image'
@@ -43,7 +42,7 @@ const Page = () => {
     };
 
     fetchData();
-  }, [id, router])
+  }, [id, router]);
 
   return (
     <main className="flex h-screen items-center justify-center">
