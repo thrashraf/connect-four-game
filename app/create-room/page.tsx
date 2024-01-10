@@ -67,16 +67,6 @@ const Page = () => {
               >
                 <Button
                   className="w-full text-2xl font-bold shadow-custom"
-                // onClick={() => {
-                //   navigator.clipboard.writeText(
-                //     //? copy the url with the room id
-                //     `${window?.location?.origin}/room/${id}`
-                //   )
-                //   toast({
-                //     title: "Copied to clipboard 🎉",
-                //     description: "You can now share this room code with your friends!",
-                //   })
-                // }}
                 >
                   <span className='mr-5'>COPY ROOM ID</span>
                   <Icons.whatsapp className='w-10' />
