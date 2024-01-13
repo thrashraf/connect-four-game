@@ -322,6 +322,7 @@ const Page = (props: Props) => {
                 hoveredColumn={hoveredColumn}
                 currentPlayer={currentPlayer}
                 playerTurn={playerTurn}
+                winningPattern={winningPattern}
               />
             )
             )}

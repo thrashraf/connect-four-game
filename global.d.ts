@@ -30,6 +30,7 @@ type GameColumnProps = {
   hoveredColumn: number | null;
   currentPlayer: number | null;
   playerTurn: number;
+  winningPattern: number[][];
 }
 
 type GameCellProps = {
@@ -37,6 +38,7 @@ type GameCellProps = {
   columnIndex: number;
   rowIndex: number;
   onColumnClick: (rowIndex: number, columnIndex: number) => void;
+  winningPattern: number[][];
 }
 
 type GameCellType = {
