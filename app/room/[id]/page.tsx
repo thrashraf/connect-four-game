@@ -5,8 +5,6 @@ import React, { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import { useParams } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
-import GameBoard from "@/components/game-board"
-
 
 import {
   checkWinner,
