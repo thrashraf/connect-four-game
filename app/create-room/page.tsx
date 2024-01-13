@@ -17,8 +17,6 @@ const Page = () => {
   const router = useRouter();
   const [id, setId] = useState('');
 
-  const { toast } = useToast();
-
   useEffect(() => {
     setId(localStorage?.getItem('id') ?? '');
 
