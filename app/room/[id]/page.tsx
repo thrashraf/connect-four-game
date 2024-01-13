@@ -1,11 +1,12 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
 
-import { type } from "os"
 import React, { useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import { useParams } from "next/navigation"
 import { useMutation } from "@tanstack/react-query"
+import GameBoard from "@/components/game-board"
+
 
 import {
   checkWinner,
@@ -25,6 +26,7 @@ import Menu from "@/components/menu"
 import PlayerCard from "@/components/player-card"
 import TurnsCard from "@/components/turns-card"
 import WinningCard from "@/components/winning-card"
+import GameColumn from "@/components/game-board"
 
 type Props = {}
 
@@ -311,52 +313,18 @@ const Page = (props: Props) => {
         <div className="relative mt-10 flex h-[350px] w-[350px] md:mt-24 md:h-[500px] md:w-[550px] xl:h-[700px] xl:w-[800px]">
           <div className="mx-auto grid grid-cols-7 md:p-1">
             {boardState.map((col, columnIndex) => (
-              <div
+              <GameColumn
                 key={columnIndex}
-                className={`z-10 flex flex-col md:gap-3`}
-                onMouseEnter={() => handleColumnHover(columnIndex)}
-              >
-                {hoveredColumn === columnIndex &&
-                  playerTurn === currentPlayer ? (
-                  <img
-                    src={`/images/marker-${playerTurn === 1 ? "red" : "yellow"
-                      }.svg`}
-                    alt="marker"
-                    className="absolute -top-7 z-10 mx-3 h-6 w-6 md:-top-12 md:mx-5 md:h-10 md:w-10"
-                  />
-                ) : null}
-                {col.map((row, rowIndex) => (
-                  <div
-                    key={rowIndex}
-                    className={`relative z-10 mt-1 h-12 w-12 border-none ${rowIndex === 0 && "xl:mt-3"
-                      } ${columnIndex === 5 || columnIndex === 6
-                        ? "md:mx-1 xl:mx-2"
-                        : "md:mx-2"
-                      } bg-transparent md:mt-0 md:h-[65px] md:w-[65px] xl:h-[95px] xl:w-[95px]`}
-                    onClick={() => handleColumnClick(rowIndex, columnIndex)}
-                  >
-                    {row?.player !== 0 ? (
-                      <>
-                        <img
-                          src={`/images/counter-${row?.player !== 1 ? "yellow" : "red"
-                            }-small.svg`}
-                          alt="counter"
-                          className={`absolute left-1/2 top-1/2 z-10 h-12 w-12 -translate-x-1/2 -translate-y-1/2 border-none md:h-[70px] md:w-[70px] xl:h-[100px] xl:w-[100px] ${row.falling ? "falling" : ""
-                            }`}
-                        />
-                        {winningPattern?.some(
-                          (pattern) =>
-                            pattern[0] === columnIndex &&
-                            pattern[1] === rowIndex
-                        ) ? (
-                          <div className="absolute left-1/2 top-1/2 z-20 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-4 border-white bg-transparent md:h-[30px] md:w-[30px] xl:h-[50px] xl:w-[50px] xl:border-8" />
-                        ) : null}
-                      </>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            ))}
+                columnIndex={columnIndex}
+                col={col}
+                onColumnHover={handleColumnHover}
+                onColumnClick={handleColumnClick}
+                hoveredColumn={hoveredColumn}
+                currentPlayer={currentPlayer}
+                playerTurn={playerTurn}
+              />
+            )
+            )}
           </div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

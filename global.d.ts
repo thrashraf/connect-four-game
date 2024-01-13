@@ -21,3 +21,25 @@ interface IGameRoom {
   winningPattern: number[][]
   isOpen: boolean
 }
+
+type GameColumnProps = {
+  columnIndex: number;
+  col: GameCellType[];
+  onColumnHover: (columnIndex: number) => void;
+  onColumnClick: (rowIndex: number, columnIndex: number) => void;
+  hoveredColumn: number | null;
+  currentPlayer: number | null;
+  playerTurn: number;
+}
+
+type GameCellProps = {
+  row: GameCellType;
+  columnIndex: number;
+  rowIndex: number;
+  onColumnClick: (rowIndex: number, columnIndex: number) => void;
+}
+
+type GameCellType = {
+  player: number;
+  falling: boolean;
+}
